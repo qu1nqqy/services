@@ -1,48 +1,42 @@
 services:
   postgres:
-    build:
-      context: ./postgres
-      args:
-        POSTGRES_VERSION: ${POSTGRES_VERSION}
-    env_file:
-      - ./postgres/.env
+    image: postgres:${POSTGRES_VERSION:-18}
     restart: unless-stopped
     environment:
-      TZ: ${TZ}
+      TZ: ${TZ:-UTC}
+      POSTGRES_DB: ${POSTGRES_DB:-appdb}
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+      # - ./postgres/init:/docker-entrypoint-initdb.d:ro   # если нужно
     networks: [web]
     ports:
-      - "5432:5432"   # ограничь IP через фаервол
+      - "5432:5432"   # ограничь UFW по IP
 
   minio:
-    image: ${MINIO_IMAGE}
-    env_file:
-      - ./minio/.env
-    environment:
-      TZ: ${TZ}
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    image: ${MINIO_IMAGE:-minio/minio:RELEASE.2023-09-07T02-05-02Z}
+    command: server /data --console-address ":9001"
     restart: unless-stopped
+    environment:
+      TZ: ${TZ:-UTC}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-change_me}
     volumes:
       - minio-data:/data
     networks: [web]
 
   nginx:
-    build:
-      context: ./nginx
+    image: nginx:1.27-alpine
     restart: unless-stopped
     depends_on: [minio]
     ports:
       - "80:80"
       - "443:443"
     volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - ./nginx/certs:/etc/letsencrypt
       - certbot-www:/var/www/certbot
-    environment:
-      MINIO_CONSOLE_DOMAIN: ${MINIO_CONSOLE_DOMAIN}
-      MINIO_S3_DOMAIN: ${MINIO_S3_DOMAIN}
     networks: [web]
 
   certbot:
