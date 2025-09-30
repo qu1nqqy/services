@@ -1,0 +1,4 @@
+.env
+postgres/.env
+minio/.env
+nginx/certs/

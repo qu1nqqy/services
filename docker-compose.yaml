@@ -1,0 +1,62 @@
+services:
+  postgres:
+    build:
+      context: ./postgres
+      args:
+        POSTGRES_VERSION: ${POSTGRES_VERSION}
+    env_file:
+      - ./postgres/.env
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    networks: [web]
+    ports:
+      - "5432:5432"   # ограничь IP через фаервол
+
+  minio:
+    build:
+      context: ./minio
+    env_file:
+      - ./minio/.env
+    environment:
+      TZ: ${TZ}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    restart: unless-stopped
+    volumes:
+      - minio-data:/data
+    networks: [web]
+
+  nginx:
+    build:
+      context: ./nginx
+    restart: unless-stopped
+    depends_on: [minio]
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/certs:/etc/letsencrypt
+      - certbot-www:/var/www/certbot
+    environment:
+      MINIO_CONSOLE_DOMAIN: ${MINIO_CONSOLE_DOMAIN}
+      MINIO_S3_DOMAIN: ${MINIO_S3_DOMAIN}
+    networks: [web]
+
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - ./nginx/certs:/etc/letsencrypt
+      - certbot-www:/var/www/certbot
+    networks: [web]
+
+networks:
+  web:
+
+volumes:
+  pgdata:
+  minio-data:
+  certbot-www:
