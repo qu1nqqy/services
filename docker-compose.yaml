@@ -22,6 +22,8 @@ services:
       TZ: ${TZ:-UTC}
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-change_me}
+      MINIO_SERVER_URL: https://{MINIO_S3_DOMAIN}
+      MINIO_BROWSER_REDIRECT_URL: https://{MINIO_CONSOLE_DOMAIN}
     volumes:
       - minio-data:/data
     networks: [web]
