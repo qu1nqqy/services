@@ -19,6 +19,8 @@ services:
   minio:
     build:
       context: ./minio
+      args:
+        MINIO_IMAGE: ${MINIO_IMAGE}
     env_file:
       - ./minio/.env
     environment:
