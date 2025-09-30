@@ -17,10 +17,7 @@ services:
       - "5432:5432"   # ограничь IP через фаервол
 
   minio:
-    build:
-      context: ./minio
-      args:
-        MINIO_IMAGE: ${MINIO_IMAGE}
+    image: ${MINIO_IMAGE}
     env_file:
       - ./minio/.env
     environment:
